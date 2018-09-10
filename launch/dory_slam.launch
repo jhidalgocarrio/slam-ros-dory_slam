@@ -1,0 +1,4 @@
+<launch>
+  <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node.py" output="screen"></node>
+</launch>
+
