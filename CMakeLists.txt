@@ -13,6 +13,8 @@ find_package(catkin REQUIRED
         rospy
         roslaunch
         std_msgs
+        sensor_msgs
+        eigen_conversions
 )
 
 ## System dependencies are found with CMake's conventions
