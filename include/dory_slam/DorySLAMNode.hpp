@@ -10,11 +10,13 @@
 /** Transform listener **/
 #include <tf/transform_listener.h>
 
+/** ROS to Eigen conversions **/
+#include <eigen_conversions/eigen_msg.h>
+
 namespace dory_slam_node
 {
     class Node
     {
-        public:
         protected:
             shark_slam::iShark *ishark;
             sensor_msgs::Imu imu_msg;
@@ -23,8 +25,11 @@ namespace dory_slam_node
             Node();
             virtual ~Node();
             void initialization(const tf::StampedTransform &transform);
-            void imu_msgCallback(const sensor_msgs::Imu &msg);
-            void gps_msgCallback(const nav_msgs::Odometry &msg);
+            void imu_msgCallback(const ::sensor_msgs::Imu &msg);
+            void gps_msgCallback(const ::nav_msgs::Odometry &msg);
 
+        protected:
+            void fromIMUMsg(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample);
+            void toIMUMsg(const ::base::samples::IMUSensors &sample, ::sensor_msgs::Imu &msg);
     };
 }
