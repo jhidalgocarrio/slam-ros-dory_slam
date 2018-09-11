@@ -29,7 +29,9 @@ namespace dory_slam_node
             void gps_msgCallback(const ::nav_msgs::Odometry &msg);
 
         protected:
-            void fromIMUMsg(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample);
-            void toIMUMsg(const ::base::samples::IMUSensors &sample, ::sensor_msgs::Imu &msg);
+            void fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample);
+            void fromIMUSensorToIMUMsg(const ::base::samples::IMUSensors &sample, ::sensor_msgs::Imu &msg);
+
+            void fromIMUMsgToOrientation(const ::sensor_msgs::Imu &msg, ::base::samples::RigidBodyState &sample);
     };
 }

@@ -31,13 +31,14 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::IMUSensors imu_sample;
-    this->fromIMUMsg(msg, imu_sample);
+    this->fromIMUMsgToIMUSensor(msg, imu_sample);
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState orient_sample;
+    this->fromIMUMsgToOrientation(msg, orient_sample);
 
     /** Call the ishark function for orientation factor**/
     this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
@@ -57,18 +58,24 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 
 }
 
-void Node::fromIMUMsg(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
+void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
 {
     sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
     sample.gyro <<msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z;
     sample.acc <<msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z;
 }
 
-void Node::toIMUMsg(const ::base::samples::IMUSensors &sample, ::sensor_msgs::Imu &msg)
+void Node::fromIMUSensorToIMUMsg(const ::base::samples::IMUSensors &sample, ::sensor_msgs::Imu &msg)
 {
     msg.header.stamp.fromNSec(sample.time.microseconds * 1000.00);
     ::tf::vectorEigenToMsg(sample.gyro, msg.angular_velocity); // gyro -> angular velocity
     ::tf::vectorEigenToMsg(sample.acc, msg.linear_acceleration); // acc -> linear acc
+}
+
+void Node::fromIMUMsgToOrientation(const ::sensor_msgs::Imu &msg, ::base::samples::RigidBodyState &sample)
+{
+    sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
+    sample.orientation = ::base::Orientation(msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z);
 }
 
 int main(int argc, char **argv)
