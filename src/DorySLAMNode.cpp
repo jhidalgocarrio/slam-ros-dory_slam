@@ -2,9 +2,9 @@
 
 using namespace dory_slam_node;
 
-Node::Node()
+Node::Node(::ros::NodeHandle &nh)
 {
-
+    this->pose_port = nh.advertise<::nav_msgs::Odometry>("dory_slam/pose", 10);
     this->ishark = new shark_slam::iShark();
 }
 
@@ -52,10 +52,14 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
     /** Convert ROS message to standard rock-types **/
     ::base::Time timestamp;
     ::base::samples::RigidBodyState gps_sample;
+    this->fromOdometryMsgToRbs(msg, gps_sample);
 
     /** Call the ishark function **/
     this->ishark->gps_pose_samplesCallback(timestamp, gps_sample);
 
+    /** Get the pose **/
+    this->fromRbsToOdometry(this->ishark->getPose(), this->slam_msg);
+    this->pose_port.publish(this->slam_msg);
 }
 
 void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
@@ -78,13 +82,48 @@ void Node::fromIMUMsgToOrientation(const ::sensor_msgs::Imu &msg, ::base::sample
     sample.orientation = ::base::Orientation(msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z);
 }
 
+void Node::fromOrientationToIMUMsg(const ::base::samples::RigidBodyState &sample, ::sensor_msgs::Imu &msg)
+{
+    msg.header.stamp.fromNSec(sample.time.microseconds * 1000.00);
+    ::tf::quaternionEigenToMsg(sample.orientation, msg.orientation);
+}
+
+void Node::fromOdometryMsgToRbs(const ::nav_msgs::Odometry &msg, ::base::samples::RigidBodyState &sample)
+{
+    /* Time **/
+    sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
+
+    /** Pose and Twist **/
+    ::Eigen::Affine3d tf_pose;
+    tf::poseMsgToEigen(msg.pose.pose, tf_pose);
+    sample.setTransform(tf_pose);
+    sample.velocity <<  msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z;
+    sample.angular_velocity <<  msg.twist.twist.angular.x, msg.twist.twist.angular.y, msg.twist.twist.angular.z;
+}
+
+void Node::fromRbsToOdometry(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg)
+{
+    /* Time **/
+    msg.header.stamp.fromNSec(sample.time.microseconds * 1000.00);
+
+    /** Pose and Twist **/
+    tf::poseEigenToMsg(sample.getTransform(), msg.pose.pose);
+    ::Eigen::Matrix<double, 6, 1> twist; twist << sample.velocity, sample.angular_velocity;
+    ::tf::twistEigenToMsg(twist, msg.twist.twist);
+
+    /** Covariances **/
+    ::Eigen::Matrix<double, 6, 6> cov = ::Eigen::Matrix<double, 6, 6>::Zero();
+    cov.block<3,3>(0,0) = sample.cov_position;
+    cov.block<3,3>(3,3) = sample.cov_orientation;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "dory_slam_node");
     ros::NodeHandle nh;
 
     /* Create ishark object **/
-    dory_slam_node::Node node;
+    dory_slam_node::Node node(nh);
 
     /** Configure SLAM properties **/
 
