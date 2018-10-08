@@ -1,4 +1,6 @@
 <launch>
-  <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node" output="screen"></node>
+    <group ns="dory">
+        <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node" output="screen"></node>
+    </group>
 </launch>
 
