@@ -64,7 +64,7 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 
 void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
 {
-    sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
+    sample.time = base::Time::fromMicroseconds(static_cast<int64_t>(msg.header.stamp.toNSec() / 1000.00));
     sample.gyro <<msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z;
     sample.acc <<msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z;
 }
@@ -78,7 +78,7 @@ void Node::fromIMUSensorToIMUMsg(const ::base::samples::IMUSensors &sample, ::se
 
 void Node::fromIMUMsgToOrientation(const ::sensor_msgs::Imu &msg, ::base::samples::RigidBodyState &sample)
 {
-    sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
+    sample.time = base::Time::fromMicroseconds(static_cast<int64_t>(msg.header.stamp.toNSec() / 1000.00));
     sample.orientation = ::base::Orientation(msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z);
 }
 
@@ -91,7 +91,7 @@ void Node::fromOrientationToIMUMsg(const ::base::samples::RigidBodyState &sample
 void Node::fromOdometryMsgToRbs(const ::nav_msgs::Odometry &msg, ::base::samples::RigidBodyState &sample)
 {
     /* Time **/
-    sample.time.fromMicroseconds(msg.header.stamp.toNSec() / 1000.00);
+    sample.time = base::Time::fromMicroseconds(static_cast<int64_t>(msg.header.stamp.toNSec() / 1000.00));
 
     /** Pose and Twist **/
     ::Eigen::Affine3d tf_pose;
@@ -136,6 +136,7 @@ int main(int argc, char **argv)
 
     /** Subscribe to the GPS sensor topics **/
     ros::Subscriber gps_sub = nh.subscribe("/dory/odometry/gps2", 100, &dory_slam_node::Node::gps_msgCallback, &node);
+    //ros::Subscriber gps_sub = nh.subscribe("/dory/odom", 100, &dory_slam_node::Node::gps_msgCallback, &node);
 
     /** Let ROS take over and hope for the best **/
     ros::spin();
