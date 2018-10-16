@@ -16,12 +16,15 @@
 /** ROS to TF2 to Eigen **/
 #include <tf2_eigen/tf2_eigen.h>
 
+/** C++ std  libraries **/
+#include <memory> // shared pointers
+
 namespace dory_slam_node
 {
     class Node
     {
         protected:
-            shark_slam::iShark *ishark;
+            std::shared_ptr<shark_slam::iShark> ishark;
             sensor_msgs::Imu imu_msg;
             nav_msgs::Odometry slam_msg;
             ros::Publisher pose_port;
@@ -30,9 +33,6 @@ namespace dory_slam_node
             /** Default constructor **/
             Node(::ros::NodeHandle &nh);
             virtual ~Node();
-
-            /** Initialization method **/
-            void initialization(const tf::StampedTransform &transform);
 
             /** IMU call back **/
             void imu_msgCallback(const ::sensor_msgs::Imu &msg);

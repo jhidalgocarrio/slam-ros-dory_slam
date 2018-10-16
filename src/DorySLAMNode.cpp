@@ -5,24 +5,12 @@ using namespace dory_slam_node;
 Node::Node(::ros::NodeHandle &nh)
 {
     this->pose_port = nh.advertise<::nav_msgs::Odometry>("dory_slam/pose", 10);
-    this->ishark = new shark_slam::iShark();
+    this->ishark.reset(new shark_slam::iShark());
 }
 
 Node::~Node()
 {
-    delete this->ishark;
-}
-
-void Node::initialization(const tf::StampedTransform &transform)
-{
-    ROS_INFO_STREAM("DORY_SLAM INITIALIZATION\n");
-
-    /** Convert ROS transform to Eigen Affine 3d **/
-    Eigen::Affine3d tf;
-
-    /** Initialize **/
-    this->ishark->initialization(tf);
-
+    this->ishark.reset();
 }
 
 void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
@@ -50,12 +38,11 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
     ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
 
     /** Convert ROS message to standard rock-types **/
-    ::base::Time timestamp;
     ::base::samples::RigidBodyState gps_sample;
     this->fromOdometryMsgToRbs(msg, gps_sample);
 
     /** Call the ishark function **/
-    this->ishark->gps_pose_samplesCallback(timestamp, gps_sample);
+    this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
 
     /** Get the pose **/
     this->fromRbsToOdometry(this->ishark->getPose(), this->slam_msg);
@@ -128,8 +115,7 @@ int main(int argc, char **argv)
     /** Configure SLAM properties **/
 
     /** Initialize SLAM node **/
-    tf::StampedTransform init_tf;
-    node.initialization(init_tf);
+    tf::StampedTransform init_tf; init_tf.setIdentity();
 
     /** Subscribe to the IMU sensor topics **/
     ros::Subscriber imu_sub = nh.subscribe("/dory/imu/data", 100, &dory_slam_node::Node::imu_msgCallback, &node);
