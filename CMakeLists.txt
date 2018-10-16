@@ -21,7 +21,6 @@ find_package(catkin REQUIRED
 find_package( PkgConfig REQUIRED)
 find_package(Rock REQUIRED)
 rock_find_pkgconfig(shark_slam REQUIRED shark_slam)
-rock_find_pkgconfig(gtsam REQUIRED gtsam)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -125,11 +124,6 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
     include/
-    ${gtsam_INCLUDE_DIRS}/3rdparty/SuiteSparse_config
-    ${gtsam_INCLUDE_DIRS}/3rdparty/CCOLAMD/Include
-    ${gtsam_INCLUDE_DIRS}/3rdparty/metis/include
-    ${gtsam_INCLUDE_DIRS}/3rdparty/metis/libmetis
-    ${gtsam_INCLUDE_DIRS}/3rdparty/metis/GKlib
     ${catkin_INCLUDE_DIRS}
 )
 
