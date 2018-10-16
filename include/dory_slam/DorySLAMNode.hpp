@@ -13,6 +13,9 @@
 /** ROS to Eigen conversions **/
 #include <eigen_conversions/eigen_msg.h>
 
+/** ROS to TF2 to Eigen **/
+#include <tf2_eigen/tf2_eigen.h>
+
 namespace dory_slam_node
 {
     class Node

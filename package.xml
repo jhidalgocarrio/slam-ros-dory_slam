@@ -55,6 +55,7 @@
   <build_depend>roslaunch</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>eigen_conversions</build_depend>
+  <build_depend>geometry2</build_depend>
 
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
