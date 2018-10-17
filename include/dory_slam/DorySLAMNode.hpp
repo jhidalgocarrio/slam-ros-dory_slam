@@ -34,6 +34,9 @@ namespace dory_slam_node
             Node(::ros::NodeHandle &nh);
             virtual ~Node();
 
+            /** Configuration **/
+            void configureNode();
+
             /** IMU call back **/
             void imu_msgCallback(const ::sensor_msgs::Imu &msg);
 
@@ -48,6 +51,6 @@ namespace dory_slam_node
             void fromOrientationToIMUMsg(const ::base::samples::RigidBodyState &sample, ::sensor_msgs::Imu &msg);
 
             void fromOdometryMsgToRbs(const ::nav_msgs::Odometry &msg, ::base::samples::RigidBodyState &sample);
-            void fromRbsToOdometry(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg);
+            void fromRbsToOdometryMsg(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg);
     };
 }

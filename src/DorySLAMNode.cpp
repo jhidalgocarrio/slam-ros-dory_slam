@@ -4,13 +4,22 @@ using namespace dory_slam_node;
 
 Node::Node(::ros::NodeHandle &nh)
 {
-    this->pose_port = nh.advertise<::nav_msgs::Odometry>("dory_slam/pose", 10);
+    /** Output port **/
+    this->pose_port = nh.advertise<::nav_msgs::Odometry>("shark_slam/pose", 10);
+
+    /** The slam object initialization **/
     this->ishark.reset(new shark_slam::iShark());
 }
 
 Node::~Node()
 {
+    /** The slam object destruction **/
     this->ishark.reset();
+}
+
+void Node::configureNode()
+{
+
 }
 
 void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
@@ -21,16 +30,21 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
     ::base::samples::IMUSensors imu_sample;
     this->fromIMUMsgToIMUSensor(msg, imu_sample);
 
-    /** Call the ishark function for imu factor**/
-    this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
-
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState orient_sample;
     this->fromIMUMsgToOrientation(msg, orient_sample);
 
-    /** Call the ishark function for orientation factor**/
-    this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
+    /** Eliminate earth gravity from acceleration **/
+    ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
+    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    imu_sample.acc -= orient_sample.orientation.inverse() * g;
+    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
+    /** Call the ishark function for imu factor**/
+    this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
+
+    /** Call the ishark function for orientation factor **/
+    this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
 }
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
@@ -45,7 +59,7 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
     this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
 
     /** Get the pose **/
-    this->fromRbsToOdometry(this->ishark->getPose(), this->slam_msg);
+    this->fromRbsToOdometryMsg(this->ishark->getPose(), this->slam_msg);
     this->pose_port.publish(this->slam_msg);
 }
 
@@ -86,9 +100,13 @@ void Node::fromOdometryMsgToRbs(const ::nav_msgs::Odometry &msg, ::base::samples
     sample.setTransform(tf_pose);
     sample.velocity <<  msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z;
     sample.angular_velocity <<  msg.twist.twist.angular.x, msg.twist.twist.angular.y, msg.twist.twist.angular.z;
+
+    /** Frames **/
+    sample.sourceFrame = msg.header.frame_id;
+    sample.targetFrame =  msg.child_frame_id;
 }
 
-void Node::fromRbsToOdometry(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg)
+void Node::fromRbsToOdometryMsg(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg)
 {
     /* Time **/
     msg.header.stamp.fromNSec(sample.time.microseconds * 1000.00);
@@ -102,6 +120,10 @@ void Node::fromRbsToOdometry(const ::base::samples::RigidBodyState &sample, ::na
     ::Eigen::Matrix<double, 6, 6> cov = ::Eigen::Matrix<double, 6, 6>::Zero();
     cov.block<3,3>(0,0) = sample.cov_position;
     cov.block<3,3>(3,3) = sample.cov_orientation;
+
+    /** Frames **/
+    msg.header.frame_id = sample.sourceFrame;
+    msg.child_frame_id = sample.targetFrame;
 }
 
 int main(int argc, char **argv)
@@ -113,15 +135,15 @@ int main(int argc, char **argv)
     dory_slam_node::Node node(nh);
 
     /** Configure SLAM properties **/
+    node.configureNode();
 
-    /** Initialize SLAM node **/
-    tf::StampedTransform init_tf; init_tf.setIdentity();
-
-    /** Subscribe to the IMU sensor topics **/
+    /** Subscribe to the IMU sensor topic **/
     ros::Subscriber imu_sub = nh.subscribe("/dory/imu/data", 100, &dory_slam_node::Node::imu_msgCallback, &node);
 
-    /** Subscribe to the GPS sensor topics **/
+    /** Subscribe to the GPS sensor topic **/
     ros::Subscriber gps_sub = nh.subscribe("/dory/odometry/gps2", 100, &dory_slam_node::Node::gps_msgCallback, &node);
+
+    /** Subscribe to the Indoor localization topic **/
     //ros::Subscriber gps_sub = nh.subscribe("/dory/odom", 100, &dory_slam_node::Node::gps_msgCallback, &node);
 
     /** Let ROS take over and hope for the best **/
