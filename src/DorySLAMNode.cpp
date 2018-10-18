@@ -116,10 +116,16 @@ void Node::fromRbsToOdometryMsg(const ::base::samples::RigidBodyState &sample, :
     ::Eigen::Matrix<double, 6, 1> twist; twist << sample.velocity, sample.angular_velocity;
     ::tf::twistEigenToMsg(twist, msg.twist.twist);
 
-    /** Covariances **/
+    /** Covariance for pose **/
     ::Eigen::Matrix<double, 6, 6> cov = ::Eigen::Matrix<double, 6, 6>::Zero();
     cov.block<3,3>(0,0) = sample.cov_position;
     cov.block<3,3>(3,3) = sample.cov_orientation;
+    ::Eigen::Map<Eigen::Matrix<double, 6, 6>>(msg.pose.covariance.data()) = cov;
+
+    /** Covariance for twist **/
+    cov.block<3,3>(0,0) = sample.cov_velocity;
+    cov.block<3,3>(3,3) = sample.cov_angular_velocity;
+    ::Eigen::Map<Eigen::Matrix<double, 6, 6>>(msg.twist.covariance.data()) = cov;
 
     /** Frames **/
     msg.header.frame_id = sample.sourceFrame;
