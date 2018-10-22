@@ -24,7 +24,7 @@ void Node::configureNode()
 
 void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 {
-    ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
+    //ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::IMUSensors imu_sample;
@@ -53,7 +53,7 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 {
-    ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
+   //ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState gps_sample;
