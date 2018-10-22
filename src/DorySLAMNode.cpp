@@ -36,15 +36,19 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
-    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    //std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
     imu_sample.acc -= orient_sample.orientation.inverse() * g;
-    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
+    //std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
 
     /** Call the ishark function for orientation factor **/
     this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
+
+    /** Get the pose **/
+    this->fromRbsToOdometryMsg(this->ishark->getPose(), this->slam_msg);
+    this->pose_port.publish(this->slam_msg);
 }
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
@@ -58,9 +62,6 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
     /** Call the ishark function **/
     this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
 
-    /** Get the pose **/
-    this->fromRbsToOdometryMsg(this->ishark->getPose(), this->slam_msg);
-    this->pose_port.publish(this->slam_msg);
 }
 
 void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
