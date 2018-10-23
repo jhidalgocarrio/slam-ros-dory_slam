@@ -99,9 +99,9 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
-    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    //std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
     imu_sample.acc -= orient_sample.orientation.inverse() * g;
-    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
+    //std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
