@@ -212,13 +212,14 @@ int main(int argc, char **argv)
     node.configureNode(nh);
 
     /** Subscribe to the IMU sensor topic **/
-    ros::Subscriber imu_sub = nh.subscribe("/dory/imu/data", 100, &dory_slam_node::Node::imu_msgCallback, &node);
+    std::string imu_port_name;
+    nh.param("imu_port_name", imu_port_name, std::string("/dory/imu/data"));
+    ros::Subscriber imu_sub = nh.subscribe(imu_port_name, 100, &dory_slam_node::Node::imu_msgCallback, &node);
 
     /** Subscribe to the GPS sensor topic **/
-    ros::Subscriber gps_sub = nh.subscribe("/dory/odometry/gps2", 100, &dory_slam_node::Node::gps_msgCallback, &node);
-
-    /** Subscribe to the Indoor localization topic **/
-    //ros::Subscriber gps_sub = nh.subscribe("/dory/odom", 100, &dory_slam_node::Node::gps_msgCallback, &node);
+    std::string gps_port_name;
+    nh.param("gps_port_name", gps_port_name, std::string("/dory/odometry/gps2"));
+    ros::Subscriber gps_sub = nh.subscribe(gps_port_name, 100, &dory_slam_node::Node::gps_msgCallback, &node);
 
     /** Let ROS take over and hope for the best **/
     ros::spin();
