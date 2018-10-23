@@ -7,6 +7,39 @@ Node::Node(::ros::NodeHandle &nh)
     /** Output port **/
     this->pose_port = nh.advertise<::nav_msgs::Odometry>("shark_slam/pose", 10);
 
+    /** Transformer listener **/
+    tf2_ros::Buffer tf_buffer;
+    tf2_ros::TransformListener listener(tf_buffer);
+
+    /** Get the IMU transformation **/
+    try
+    {
+        geometry_msgs::TransformStamped ros_tf;//base_link to imu
+        ros_tf = tf_buffer.lookupTransform("dory/base_link", "dory/imu_link", ros::Time(0), ros::Duration(10));
+        this->imu_tf = tf2::transformToEigen(ros_tf);
+    }
+    catch (tf2::TransformException &ex)
+    {
+        ROS_WARN("IMU TF %s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+
+    /** Get the GPS transformation **/
+    try
+    {
+        geometry_msgs::TransformStamped ros_tf;//base_link to gps
+        ros_tf = tf_buffer.lookupTransform("dory/base_link", "dory/gps_link", ros::Time(0), ros::Duration(10));
+        this->gps_tf = tf2::transformToEigen(ros_tf);
+    }
+    catch (tf2::TransformException &ex)
+    {
+        ROS_WARN("GPS TF %s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+
+    std::cout<<"[DORY_SLAM] IMU TF:\n"<<this->imu_tf.matrix()<<std::endl;
+    std::cout<<"[DORY_SLAM] GPS TF:\n"<<this->gps_tf.matrix()<<std::endl;
+
     /** The slam object initialization **/
     this->ishark.reset(new shark_slam::iShark());
 }
@@ -17,8 +50,22 @@ Node::~Node()
     this->ishark.reset();
 }
 
-void Node::configureNode()
+void Node::configureNode(::ros::NodeHandle &nh)
 {
+    /** config values **/
+    double accel_noise_sigma, gyro_noise_sigma;
+    double accel_bias_rw_sigma, gyro_bias_rw_sigma;
+    double gps_noise_sigma;
+
+    nh.param("accel_noise_sigma", accel_noise_sigma, 0.3924);
+    nh.param("gyro_noise_sigma", gyro_noise_sigma, 0.205689024915);
+    nh.param("accel_bias_rw_sigma", accel_bias_rw_sigma, 0.04905);
+    nh.param("gyro_bias_rw_sigma", gyro_bias_rw_sigma, 0.001454441043);
+    nh.param("gps_noise_sigma", gps_noise_sigma, 0.1);
+
+    this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
+                                accel_bias_rw_sigma, gyro_bias_rw_sigma,
+                                gps_noise_sigma);
 
 }
 
@@ -34,11 +81,19 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
     ::base::samples::RigidBodyState orient_sample;
     this->fromIMUMsgToOrientation(msg, orient_sample);
 
+    /** Convert IMU values in robot body frame **/
+    imu_sample.gyro = this->imu_tf * imu_sample.gyro;
+    imu_sample.acc = this->imu_tf * imu_sample.acc;
+    imu_sample.mag = this->imu_tf * imu_sample.mag;
+
+    /** Convert orientation in robot body frame **/
+    orient_sample.orientation = orient_sample.orientation * Eigen::Quaterniond(this->imu_tf.rotation().inverse());
+
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
-    //std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
     imu_sample.acc -= orient_sample.orientation.inverse() * g;
-    //std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
@@ -58,6 +113,10 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState gps_sample;
     this->fromOdometryMsgToRbs(msg, gps_sample);
+
+    /** Convert gps in robot body frame **/
+    gps_sample.position = this->gps_tf * gps_sample.position;
+    gps_sample.orientation = gps_sample.orientation * Eigen::Quaterniond(this->gps_tf.rotation().inverse());
 
     /** Call the ishark function **/
     this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
@@ -141,8 +200,8 @@ int main(int argc, char **argv)
     /* Create ishark object **/
     dory_slam_node::Node node(nh);
 
-    /** Configure SLAM properties **/
-    node.configureNode();
+    /** Configure SLAM node **/
+    node.configureNode(nh);
 
     /** Subscribe to the IMU sensor topic **/
     ros::Subscriber imu_sub = nh.subscribe("/dory/imu/data", 100, &dory_slam_node::Node::imu_msgCallback, &node);

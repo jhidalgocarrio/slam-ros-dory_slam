@@ -7,8 +7,11 @@
 /** ROS Nav messages **/
 #include <nav_msgs/Odometry.h>
 
+/** ROS Transformation messages **/
+#include <geometry_msgs/TransformStamped.h>
+
 /** Transform listener **/
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
 
 /** ROS to Eigen conversions **/
 #include <eigen_conversions/eigen_msg.h>
@@ -24,10 +27,18 @@ namespace dory_slam_node
     class Node
     {
         protected:
+            /** iShark slam variable **/
             std::shared_ptr<shark_slam::iShark> ishark;
+
+            /** Input port messages **/
             sensor_msgs::Imu imu_msg;
             nav_msgs::Odometry slam_msg;
             ros::Publisher pose_port;
+
+            /** Transformations **/
+            Eigen::Affine3d imu_tf; //base_link to imu
+            Eigen::Affine3d gps_tf; //base_link to gps
+
 
         public:
             /** Default constructor **/
@@ -35,7 +46,7 @@ namespace dory_slam_node
             virtual ~Node();
 
             /** Configuration **/
-            void configureNode();
+            void configureNode(::ros::NodeHandle &nh);
 
             /** IMU call back **/
             void imu_msgCallback(const ::sensor_msgs::Imu &msg);
