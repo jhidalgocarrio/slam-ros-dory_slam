@@ -11,11 +11,17 @@ Node::Node(::ros::NodeHandle &nh)
     tf2_ros::Buffer tf_buffer;
     tf2_ros::TransformListener listener(tf_buffer);
 
+    /** Get the parameters for the transformer **/
+    std::string body_frame, imu_frame, gps_frame;
+    nh.param("body_frame", body_frame, std::string("dory/base_link"));
+    nh.param("imu_frame", imu_frame, std::string("dory/imu_link"));
+    nh.param("gps_frame", imu_frame, std::string("dory/gps_link"));
+
     /** Get the IMU transformation **/
     try
     {
         geometry_msgs::TransformStamped ros_tf;//base_link to imu
-        ros_tf = tf_buffer.lookupTransform("dory/base_link", "dory/imu_link", ros::Time(0), ros::Duration(10));
+        ros_tf = tf_buffer.lookupTransform(body_frame, imu_frame, ros::Time(0), ros::Duration(10));
         this->imu_tf = tf2::transformToEigen(ros_tf);
     }
     catch (tf2::TransformException &ex)
@@ -28,7 +34,7 @@ Node::Node(::ros::NodeHandle &nh)
     try
     {
         geometry_msgs::TransformStamped ros_tf;//base_link to gps
-        ros_tf = tf_buffer.lookupTransform("dory/base_link", "dory/gps_link", ros::Time(0), ros::Duration(10));
+        ros_tf = tf_buffer.lookupTransform(body_frame, gps_frame, ros::Time(0), ros::Duration(10));
         this->gps_tf = tf2::transformToEigen(ros_tf);
     }
     catch (tf2::TransformException &ex)
