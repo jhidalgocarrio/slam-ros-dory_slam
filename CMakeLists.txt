@@ -15,6 +15,7 @@ find_package(catkin REQUIRED
         std_msgs
         sensor_msgs
         eigen_conversions
+        tf2_ros
 )
 
 ## System dependencies are found with CMake's conventions
