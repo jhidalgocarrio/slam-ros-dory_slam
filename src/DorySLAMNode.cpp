@@ -5,7 +5,9 @@ using namespace dory_slam_node;
 Node::Node(::ros::NodeHandle &nh)
 {
     /** Output port **/
-    this->pose_port = nh.advertise<::nav_msgs::Odometry>("shark_slam/pose", 10);
+    std::string output_port_name;
+    nh.param("output_port_name", output_port_name, std::string("shark_slam/pose"));
+    this->pose_port = nh.advertise<::nav_msgs::Odometry>(output_port_name, 10);
 
     /** Transformer listener **/
     tf2_ros::Buffer tf_buffer;
@@ -15,7 +17,7 @@ Node::Node(::ros::NodeHandle &nh)
     std::string body_frame, imu_frame, gps_frame;
     nh.param("body_frame", body_frame, std::string("dory/base_link"));
     nh.param("imu_frame", imu_frame, std::string("dory/imu_link"));
-    nh.param("gps_frame", imu_frame, std::string("dory/gps_link"));
+    nh.param("gps_frame", gps_frame, std::string("dory/gps_link"));
 
     /** Get the IMU transformation **/
     try
