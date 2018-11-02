@@ -1,6 +1,9 @@
 <launch>
     <group ns="dory">
-        <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node" output="screen"></node>
+        <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node" output="screen">
+        <param name="gps_frame" type="string" value="dory/april_tag_link" />
+        <param name="gps_port_name" type="string" value="dory/odom" />
+        </node>
     </group>
 </launch>
 
