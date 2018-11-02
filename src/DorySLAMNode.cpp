@@ -13,11 +13,14 @@ Node::Node(::ros::NodeHandle &nh)
     tf2_ros::Buffer tf_buffer;
     tf2_ros::TransformListener listener(tf_buffer);
 
-    /** Get the parameters for the transformer **/
+    /** Default parameters for the transformer **/
     std::string body_frame, imu_frame, gps_frame;
     nh.param("body_frame", body_frame, std::string("dory/base_link"));
+    ROS_INFO("got param body_frame: %s", body_frame.c_str());
     nh.param("imu_frame", imu_frame, std::string("dory/imu_link"));
+    ROS_INFO("got param imu_frame: %s", imu_frame.c_str());
     nh.param("gps_frame", gps_frame, std::string("dory/gps_link"));
+    ROS_INFO("got param gps_frame: %s", gps_frame.c_str());
 
     /** Get the IMU transformation **/
     try
@@ -79,7 +82,7 @@ void Node::configureNode(::ros::NodeHandle &nh)
 
 void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 {
-    //ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
+    ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::IMUSensors imu_sample;
@@ -99,9 +102,9 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
-    //std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
     imu_sample.acc -= orient_sample.orientation.inverse() * g;
-    //std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
@@ -116,7 +119,7 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 {
-   //ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
+    ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState gps_sample;
@@ -203,7 +206,7 @@ void Node::fromRbsToOdometryMsg(const ::base::samples::RigidBodyState &sample, :
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "dory_slam_node");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     /* Create ishark object **/
     dory_slam_node::Node node(nh);
@@ -214,11 +217,13 @@ int main(int argc, char **argv)
     /** Subscribe to the IMU sensor topic **/
     std::string imu_port_name;
     nh.param("imu_port_name", imu_port_name, std::string("/dory/imu/data"));
+    ROS_INFO("got param imu_port_name: %s", imu_port_name.c_str());
     ros::Subscriber imu_sub = nh.subscribe(imu_port_name, 100, &dory_slam_node::Node::imu_msgCallback, &node);
 
     /** Subscribe to the GPS sensor topic **/
     std::string gps_port_name;
     nh.param("gps_port_name", gps_port_name, std::string("/dory/odometry/gps2"));
+    ROS_INFO("got param gps_port_name: %s", gps_port_name.c_str());
     ros::Subscriber gps_sub = nh.subscribe(gps_port_name, 100, &dory_slam_node::Node::gps_msgCallback, &node);
 
     /** Let ROS take over and hope for the best **/
