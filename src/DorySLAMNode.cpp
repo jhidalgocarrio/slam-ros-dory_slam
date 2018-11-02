@@ -1,5 +1,7 @@
 #include "dory_slam/DorySLAMNode.hpp"
 
+#define DEBUG_PRINTS 1
+
 using namespace dory_slam_node;
 
 Node::Node(::ros::NodeHandle &nh)
@@ -7,6 +9,7 @@ Node::Node(::ros::NodeHandle &nh)
     /** Output port **/
     std::string output_port_name;
     nh.param("output_port_name", output_port_name, std::string("shark_slam/pose"));
+    ROS_INFO("got output_port_name: %s", output_port_name.c_str());
     this->pose_port = nh.advertise<::nav_msgs::Odometry>(output_port_name, 10);
 
     /** Transformer listener **/
@@ -68,11 +71,16 @@ void Node::configureNode(::ros::NodeHandle &nh)
     double accel_bias_rw_sigma, gyro_bias_rw_sigma;
     double gps_noise_sigma;
 
-    nh.param("accel_noise_sigma", accel_noise_sigma, 0.3924);
-    nh.param("gyro_noise_sigma", gyro_noise_sigma, 0.205689024915);
-    nh.param("accel_bias_rw_sigma", accel_bias_rw_sigma, 0.04905);
-    nh.param("gyro_bias_rw_sigma", gyro_bias_rw_sigma, 0.001454441043);
-    nh.param("gps_noise_sigma", gps_noise_sigma, 0.1);
+    nh.param("accel_noise_sigma", accel_noise_sigma, 0.5);
+    ROS_INFO("got param accel_noise_sigma: %f", accel_noise_sigma);
+    nh.param("gyro_noise_sigma", gyro_noise_sigma, 0.02);
+    ROS_INFO("got param gyro_noise_sigma: %f", gyro_noise_sigma);
+    nh.param("accel_bias_rw_sigma", accel_bias_rw_sigma, 0.4905);
+    ROS_INFO("got param accel_bias_rw_sigma: %f", accel_bias_rw_sigma);
+    nh.param("gyro_bias_rw_sigma", gyro_bias_rw_sigma, 0.01454441043);
+    ROS_INFO("got param gyro_bias_rw_sigma: %f", gyro_bias_rw_sigma);
+    nh.param("gps_noise_sigma", gps_noise_sigma, 0.3);
+    ROS_INFO("got param gps_noise_sigma: %f", gps_noise_sigma);
 
     this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
                                 accel_bias_rw_sigma, gyro_bias_rw_sigma,
@@ -82,7 +90,9 @@ void Node::configureNode(::ros::NodeHandle &nh)
 
 void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 {
+    #ifdef DEBUG_PRINTS
     ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
+    #endif
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::IMUSensors imu_sample;
@@ -101,9 +111,11 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
     orient_sample.orientation = orient_sample.orientation * Eigen::Quaterniond(this->imu_tf.rotation().inverse());
 
     /** Eliminate earth gravity from acceleration **/
-    ::Eigen::Vector3d g (0.00, 0.00, 9.80665);
+    ::Eigen::Vector3d gravity (0.00, 0.00, GRAVITY);
     std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
-    imu_sample.acc -= orient_sample.orientation.inverse() * g;
+    gravity = orient_sample.orientation.inverse() * gravity;
+    std::cout<<"GRAVITY IN BODY: "<<gravity[0]<<", "<<gravity[1]<<", "<<gravity[2]<<"\n";
+    imu_sample.acc = imu_sample.acc - gravity;
     std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
 
     /** Call the ishark function for imu factor**/
@@ -119,7 +131,10 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 {
+
+    #ifdef DEBUG_PRINTS
     ROS_INFO_STREAM("[DORY_SLAM] GPS_CALLBACK RECEIVED ");
+    #endif
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState gps_sample;
