@@ -1,8 +1,10 @@
-#include "dory_slam/DorySLAMNode.hpp"
+#include <dory_slam/DorySLAMNode.hpp>
 
 #define DEBUG_PRINTS 1
 
 using namespace dory_slam_node;
+            
+const double GRAVITY  = 9.80665; //[m/s^2] Real 9.80665
 
 Node::Node(::ros::NodeHandle &nh)
 {

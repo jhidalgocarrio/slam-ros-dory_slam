@@ -27,9 +27,6 @@ namespace dory_slam_node
     class Node
     {
         protected:
-            static constexpr double GRAVITY  = 9.80665; //[m/s^2] Real 9.80665
-
-        protected:
             /** iShark slam variable **/
             std::shared_ptr<shark_slam::iShark> ishark;
 
