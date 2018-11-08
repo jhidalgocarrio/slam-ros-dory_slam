@@ -26,6 +26,9 @@ namespace dory_slam_node
 {
     class Node
     {
+	public:
+	   EIGEN_MAKE_ALIGNED_OPERATOR_NEW //Structures having Eigen members
+
         protected:
             /** iShark slam variable **/
             std::shared_ptr<shark_slam::iShark> ishark;
