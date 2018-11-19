@@ -3,7 +3,7 @@
         <node name="dory_slam_node" pkg="dory_slam" type="dory_slam_node" output="screen">
         <param name="gps_frame" type="string" value="april_tag_link" />
         <param name="gps_port_name" type="string" value="/dory/odom" />
-        <param name="output_port_name" type="string" value="/shark_slam/pose_debug" />
+        <param name="output_port_name" type="string" value="/shark_slam/pose" />
         </node>
     </group>
 </launch>
