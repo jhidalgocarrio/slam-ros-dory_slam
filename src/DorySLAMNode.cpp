@@ -12,7 +12,7 @@ Node::Node(::ros::NodeHandle &nh)
     std::string output_port_name;
     nh.param("output_port_name", output_port_name, std::string("shark_slam/pose"));
     ROS_INFO("got output_port_name: %s", output_port_name.c_str());
-    this->pose_port = nh.advertise<::nav_msgs::Odometry>(output_port_name, 10);
+    this->pose_port = nh.advertise<::nav_msgs::Odometry>(output_port_name, 1);
 
     /** Transformer listener **/
     tf2_ros::Buffer tf_buffer;
