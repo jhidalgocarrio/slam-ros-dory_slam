@@ -20,11 +20,11 @@ Node::Node(::ros::NodeHandle &nh)
 
     /** Default parameters for the transformer **/
     std::string body_frame, imu_frame, gps_frame;
-    nh.param("body_frame", body_frame, std::string("dory/base_link"));
+    nh.param("body_frame", body_frame, std::string("base_link"));
     ROS_INFO("got param body_frame: %s", body_frame.c_str());
-    nh.param("imu_frame", imu_frame, std::string("dory/imu_link"));
+    nh.param("imu_frame", imu_frame, std::string("imu_link"));
     ROS_INFO("got param imu_frame: %s", imu_frame.c_str());
-    nh.param("gps_frame", gps_frame, std::string("dory/gps_link"));
+    nh.param("gps_frame", gps_frame, std::string("gps_link"));
     ROS_INFO("got param gps_frame: %s", gps_frame.c_str());
 
     /** Get the IMU transformation **/
