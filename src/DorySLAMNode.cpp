@@ -81,7 +81,7 @@ void Node::configureNode(::ros::NodeHandle &nh)
     ROS_INFO("got param accel_bias_rw_sigma: %f", accel_bias_rw_sigma);
     nh.param("gyro_bias_rw_sigma", gyro_bias_rw_sigma, 0.01454441043);
     ROS_INFO("got param gyro_bias_rw_sigma: %f", gyro_bias_rw_sigma);
-    nh.param("gps_noise_sigma", gps_noise_sigma, 0.3);
+    nh.param("gps_noise_sigma", gps_noise_sigma, 0.5);
     ROS_INFO("got param gps_noise_sigma: %f", gps_noise_sigma);
 
     this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
@@ -114,11 +114,11 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
 
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d gravity (0.00, 0.00, GRAVITY);
-    std::cout<<"acc(w g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w g): "<<imu_sample.acc[0]<<", "<<imu_sample.acc[1]<<", "<<imu_sample.acc[2]<<"\n";
     gravity = orient_sample.orientation.inverse() * gravity;
     std::cout<<"GRAVITY IN BODY: "<<gravity[0]<<", "<<gravity[1]<<", "<<gravity[2]<<"\n";
     imu_sample.acc = imu_sample.acc - gravity;
-    std::cout<<"acc(w/o g):\n"<<imu_sample.acc<<"\n";
+    std::cout<<"acc(w/o g): "<<imu_sample.acc[0]<<", "<<imu_sample.acc[1]<<", "<<imu_sample.acc[2]<<"\n";
 
     /** Call the ishark function for imu factor**/
     this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
@@ -127,7 +127,7 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
     this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
 
     /** Get the pose **/
-    this->fromRbsToOdometryMsg(this->ishark->getPose(), this->slam_msg);
+    this->fromRbsToOdometryMsg(this->ishark->getPose(imu_sample.time), this->slam_msg);
     this->pose_port.publish(this->slam_msg);
 }
 
@@ -148,7 +148,6 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 
     /** Call the ishark function **/
     this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
-
 }
 
 void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
@@ -191,7 +190,7 @@ void Node::fromOdometryMsgToRbs(const ::nav_msgs::Odometry &msg, ::base::samples
 
     /** Frames **/
     sample.sourceFrame = msg.header.frame_id;
-    sample.targetFrame =  msg.child_frame_id;
+    sample.targetFrame = msg.child_frame_id;
 }
 
 void Node::fromRbsToOdometryMsg(const ::base::samples::RigidBodyState &sample, ::nav_msgs::Odometry &msg)
