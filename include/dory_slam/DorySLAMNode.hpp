@@ -33,8 +33,10 @@ namespace dory_slam_node
             /** iShark slam variable **/
             std::shared_ptr<shark_slam::iShark> ishark;
 
-            /** Input port messages **/
-            sensor_msgs::Imu imu_msg;
+            /** IMU samples **/
+            ::base::samples::IMUSensors imu_sample;
+
+            /** Output port messages **/
             nav_msgs::Odometry slam_msg;
             ros::Publisher pose_port;
 
@@ -42,6 +44,10 @@ namespace dory_slam_node
             Eigen::Affine3d imu_tf; //base_link to imu
             Eigen::Affine3d gps_tf; //base_link to gps
 
+            /** Parameters variables **/
+            double imu_dt; /** delta time from imu **/
+            double output_dt; /** output delta time **/
+            unsigned int imu_counts; /** imu samples counts **/
 
         public:
             /** Default constructor **/

@@ -27,6 +27,12 @@ Node::Node(::ros::NodeHandle &nh)
     nh.param("gps_frame", gps_frame, std::string("gps_link"));
     ROS_INFO("got param gps_frame: %s", gps_frame.c_str());
 
+    nh.param("output_delta_time", this->output_dt, 0.1);
+    ROS_INFO("got output_delta_time: %f", this->output_dt);
+
+    /** Set imu samples counter to zero **/
+    this->imu_counts = 0;
+
     /** Get the IMU transformation **/
     try
     {
@@ -96,39 +102,51 @@ void Node::imu_msgCallback(const ::sensor_msgs::Imu &msg)
     ROS_INFO_STREAM("[DORY_SLAM] IMU_CALLBACK RECEIVED ");
     #endif
 
+    /** Increase imu samples counter **/
+    this->imu_counts++;
+    std::cout<<"IMU COUNTS: "<<this->imu_counts<<std::endl;
+
+    /** Compute delta time **/
+    this->imu_dt = (base::Time::fromMicroseconds(static_cast<int64_t>(msg.header.stamp.toNSec() / 1000.00)) - this->imu_sample.time).toSeconds();
+
     /** Convert ROS message to standard rock-types **/
-    ::base::samples::IMUSensors imu_sample;
-    this->fromIMUMsgToIMUSensor(msg, imu_sample);
+    this->fromIMUMsgToIMUSensor(msg, this->imu_sample);
 
     /** Convert ROS message to standard rock-types **/
     ::base::samples::RigidBodyState orient_sample;
     this->fromIMUMsgToOrientation(msg, orient_sample);
 
     /** Convert IMU values in robot body frame **/
-    imu_sample.gyro = this->imu_tf * imu_sample.gyro;
-    imu_sample.acc = this->imu_tf * imu_sample.acc;
-    imu_sample.mag = this->imu_tf * imu_sample.mag;
+    this->imu_sample.gyro = this->imu_tf * this->imu_sample.gyro;
+    this->imu_sample.acc = this->imu_tf * this->imu_sample.acc;
+    this->imu_sample.mag = this->imu_tf * this->imu_sample.mag;
 
     /** Convert orientation in robot body frame **/
     orient_sample.orientation = orient_sample.orientation * Eigen::Quaterniond(this->imu_tf.rotation().inverse());
 
     /** Eliminate earth gravity from acceleration **/
     ::Eigen::Vector3d gravity (0.00, 0.00, GRAVITY);
-    std::cout<<"acc(w g): "<<imu_sample.acc[0]<<", "<<imu_sample.acc[1]<<", "<<imu_sample.acc[2]<<"\n";
+    std::cout<<"acc(w g): "<<this->imu_sample.acc[0]<<", "<<this->imu_sample.acc[1]<<", "<<this->imu_sample.acc[2]<<"\n";
     gravity = orient_sample.orientation.inverse() * gravity;
     std::cout<<"GRAVITY IN BODY: "<<gravity[0]<<", "<<gravity[1]<<", "<<gravity[2]<<"\n";
-    imu_sample.acc = imu_sample.acc - gravity;
-    std::cout<<"acc(w/o g): "<<imu_sample.acc[0]<<", "<<imu_sample.acc[1]<<", "<<imu_sample.acc[2]<<"\n";
+    this->imu_sample.acc = this->imu_sample.acc - gravity;
+    std::cout<<"acc(w/o g): "<<this->imu_sample.acc[0]<<", "<<this->imu_sample.acc[1]<<", "<<this->imu_sample.acc[2]<<"\n";
 
     /** Call the ishark function for imu factor**/
-    this->ishark->imu_samplesCallback(imu_sample.time, imu_sample);
+    this->ishark->imu_samplesCallback(this->imu_sample.time, this->imu_sample);
 
     /** Call the ishark function for orientation factor **/
     this->ishark->orientation_samplesCallback(orient_sample.time, orient_sample);
 
-    /** Get the pose **/
-    this->fromRbsToOdometryMsg(this->ishark->getPose(imu_sample.time), this->slam_msg);
-    this->pose_port.publish(this->slam_msg);
+    if ((this->output_dt <= this->imu_dt) || (this->imu_dt * this->imu_counts > this->output_dt))
+    {
+        /** Get the pose **/
+        this->fromRbsToOdometryMsg(this->ishark->getPose(this->imu_sample.time), this->slam_msg);
+        this->pose_port.publish(this->slam_msg);
+
+        /** Reset imu samples counter **/
+        this->imu_counts = 0;
+    }
 }
 
 void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
