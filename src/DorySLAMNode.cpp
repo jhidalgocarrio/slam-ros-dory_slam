@@ -27,6 +27,7 @@ Node::Node(::ros::NodeHandle &nh)
     nh.param("gps_frame", gps_frame, std::string("gps_link"));
     ROS_INFO("got param gps_frame: %s", gps_frame.c_str());
 
+    /** Default node parameters **/
     nh.param("output_delta_time", this->output_dt, 0.1);
     ROS_INFO("got output_delta_time: %f", this->output_dt);
 
@@ -78,6 +79,7 @@ void Node::configureNode(::ros::NodeHandle &nh)
     double accel_noise_sigma, gyro_noise_sigma;
     double accel_bias_rw_sigma, gyro_bias_rw_sigma;
     double gps_noise_sigma;
+    std::string frame_id, child_frame_id; /** Pose frame id **/
 
     nh.param("accel_noise_sigma", accel_noise_sigma, 0.5);
     ROS_INFO("got param accel_noise_sigma: %f", accel_noise_sigma);
@@ -89,10 +91,15 @@ void Node::configureNode(::ros::NodeHandle &nh)
     ROS_INFO("got param gyro_bias_rw_sigma: %f", gyro_bias_rw_sigma);
     nh.param("gps_noise_sigma", gps_noise_sigma, 0.5);
     ROS_INFO("got param gps_noise_sigma: %f", gps_noise_sigma);
+    nh.param("frame_id", frame_id, std::string("parent"));
+    ROS_INFO("got param frame_id: %s", frame_id.c_str());
+    nh.param("child_frame_id", child_frame_id, std::string("child"));
+    ROS_INFO("got param child_frame_id: %s", child_frame_id.c_str());
+
 
     this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
                                 accel_bias_rw_sigma, gyro_bias_rw_sigma,
-                                gps_noise_sigma);
+                                gps_noise_sigma, frame_id, child_frame_id);
 
 }
 
