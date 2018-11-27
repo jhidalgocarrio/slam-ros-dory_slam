@@ -5,6 +5,8 @@
             <param name="gps_frame" type="string" value="april_tag_link" />
             <param name="gps_port_name" type="string" value="/dory/map/odom" />
             <param name="output_port_name" type="string" value="pose" />
+            <param name="frame_id" type="string" value="map" />
+            <param name="child_frame_id" type="string" value="base_link" />
         </node>
     </group>
 </launch>
