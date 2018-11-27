@@ -3,7 +3,7 @@
     <group ns="dory">
         <node name="dory_slam" pkg="dory_slam" type="dory_slam_node" output="screen">
             <param name="gps_frame" type="string" value="april_tag_link" />
-            <param name="gps_port_name" type="string" value="/dory/odom" />
+            <param name="gps_port_name" type="string" value="/dory/map/odom" />
             <param name="output_port_name" type="string" value="pose" />
             <param name="output_delta_time" type="double" value="0.5" />
         </node>
