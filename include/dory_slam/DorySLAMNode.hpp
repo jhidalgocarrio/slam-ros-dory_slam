@@ -48,6 +48,7 @@ namespace dory_slam_node
             double imu_dt; /** delta time from imu **/
             double output_dt; /** output delta time **/
             unsigned int imu_counts; /** imu samples counts **/
+            bool publish_transform;
 
         public:
             /** Default constructor **/

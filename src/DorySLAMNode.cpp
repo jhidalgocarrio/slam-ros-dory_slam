@@ -1,4 +1,5 @@
 #include <dory_slam/DorySLAMNode.hpp>
+#include <tf2_ros/transform_broadcaster.h>
 
 #define DEBUG_PRINTS 1
 
@@ -95,7 +96,11 @@ void Node::configureNode(::ros::NodeHandle &nh)
     ROS_INFO("got param frame_id: %s", frame_id.c_str());
     nh.param("child_frame_id", child_frame_id, std::string("child"));
     ROS_INFO("got param child_frame_id: %s", child_frame_id.c_str());
-
+    nh.param("publish_transform", this->publish_transform, false);
+    if (this->publish_transform)
+        ROS_INFO("got param publish_transform True");
+    else
+        ROS_INFO("got param publish_transform False");
 
     this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
                                 accel_bias_rw_sigma, gyro_bias_rw_sigma,
@@ -173,6 +178,20 @@ void Node::gps_msgCallback(const ::nav_msgs::Odometry &msg)
 
     /** Call the ishark function **/
     this->ishark->gps_pose_samplesCallback(gps_sample.time, gps_sample);
+
+    if (this->publish_transform)
+    {
+        static tf2_ros::TransformBroadcaster br;
+        geometry_msgs::TransformStamped slam_tf;
+        slam_tf.header.stamp = this->slam_msg.header.stamp;
+        slam_tf.header.frame_id = this->slam_msg.header.frame_id;
+        slam_tf.child_frame_id = this->slam_msg.child_frame_id;
+        slam_tf.transform.translation.x = this->slam_msg.pose.pose.position.x;
+        slam_tf.transform.translation.y = this->slam_msg.pose.pose.position.y;
+        slam_tf.transform.translation.z = this->slam_msg.pose.pose.position.z;
+        slam_tf.transform.rotation = this->slam_msg.pose.pose.orientation;
+        br.sendTransform(slam_tf);
+    }
 }
 
 void Node::fromIMUMsgToIMUSensor(const ::sensor_msgs::Imu &msg, ::base::samples::IMUSensors &sample)
