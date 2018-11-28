@@ -9,6 +9,7 @@
             <param name="gps_noise_sigma" type="double" value="2.0" />
             <param name="frame_id" type="string" value="map" />
             <param name="child_frame_id" type="string" value="base_link" />
+            <param name="publish_transform" type="bool" value="true" />
         </node>
 
         <node name="utm_map_transforms" pkg="dory_slam" type="utm_map_transforms.py">
