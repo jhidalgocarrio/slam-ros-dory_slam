@@ -16,7 +16,7 @@ class Node():
     def callback(self, data):
         #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.header.stamp)
 
-        map_odom_pub = rospy.Publisher("/dory/map/odom", Odometry, queue_size=1)
+        map_odom_pub = rospy.Publisher("map/odom", Odometry, queue_size=1)
 
         if self.initialized is False:
             self.init_odom = data
@@ -69,7 +69,7 @@ class Node():
          # In ROS, nodes are uniquely named.
         rospy.init_node(self.name, anonymous=False)
 
-        rospy.Subscriber("/dory/gps/odom", Odometry, self.callback)
+        rospy.Subscriber("gps/odom", Odometry, self.callback)
 
          # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
