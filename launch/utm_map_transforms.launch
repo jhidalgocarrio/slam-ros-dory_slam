@@ -1,0 +1,9 @@
+<launch>
+    <machine name="dory" address="dory.local" user="noblean" env-loader="/home/noblean/.ros-bash-and-run.sh" />
+    <group ns="dory">
+        <node name="utm_map_transforms" pkg="dory_slam"
+        type="utm_map_transforms.py" output="screen">
+        </node>
+    </group>
+</launch>
+
