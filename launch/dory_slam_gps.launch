@@ -1,6 +1,12 @@
 <launch>
     <machine name="dory" address="dory.local" user="noblean" env-loader="/home/noblean/.ros-bash-and-run.sh" />
     <group ns="dory">
+
+        <!--  GPS in UTM but in zero starting pose frame -->
+        <node name="utm_map_transforms" pkg="dory_slam" type="utm_map_transforms.py">
+        </node>
+
+        <!-- SLAM node -->
         <node name="slam" pkg="dory_slam" type="dory_slam_node" output="screen">
             <param name="gps_frame" type="string" value="gps_link" />
             <param name="gps_port_name" type="string" value="/dory/map/odom" />
@@ -12,8 +18,6 @@
             <param name="publish_transform" type="bool" value="true" />
         </node>
 
-        <node name="utm_map_transforms" pkg="dory_slam" type="utm_map_transforms.py">
-        </node>
-    </group>
+   </group>
 </launch>
 
