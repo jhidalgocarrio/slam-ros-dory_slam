@@ -81,6 +81,7 @@ void Node::configureNode(::ros::NodeHandle &nh)
     double accel_bias_rw_sigma, gyro_bias_rw_sigma;
     double gps_noise_sigma;
     std::string frame_id, child_frame_id; /** Pose frame id **/
+    bool use_gps_heading; /** True in case GPS gives heading information **/
 
     nh.param("accel_noise_sigma", accel_noise_sigma, 0.5);
     ROS_INFO("got param accel_noise_sigma: %f", accel_noise_sigma);
@@ -101,10 +102,16 @@ void Node::configureNode(::ros::NodeHandle &nh)
         ROS_INFO("got param publish_transform True");
     else
         ROS_INFO("got param publish_transform False");
+    nh.param("use_gps_heading", use_gps_heading, false);
+    if (use_gps_heading)
+        ROS_INFO("got param use_gps_heading True");
+    else
+        ROS_INFO("got param use_gps_heading False");
 
     this->ishark->configuration(accel_noise_sigma, gyro_noise_sigma,
                                 accel_bias_rw_sigma, gyro_bias_rw_sigma,
-                                gps_noise_sigma, frame_id, child_frame_id);
+                                gps_noise_sigma, frame_id, child_frame_id,
+                                use_gps_heading);
 
 }
 
