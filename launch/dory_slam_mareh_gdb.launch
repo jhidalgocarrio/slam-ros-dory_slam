@@ -7,6 +7,7 @@
             <param name="output_port_name" type="string" value="pose" />
             <param name="frame_id" type="string" value="map" />
             <param name="child_frame_id" type="string" value="base_link" />
+            <param name="use_gps_heading" type="bool" value="true" />
         </node>
     </group>
 </launch>

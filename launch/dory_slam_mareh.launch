@@ -8,6 +8,7 @@
             <param name="output_delta_time" type="double" value="0.5" />
             <param name="frame_id" type="string" value="map" />
             <param name="child_frame_id" type="string" value="base_link" />
+            <param name="use_gps_heading" type="bool" value="false" />
         </node>
     </group>
 </launch>
